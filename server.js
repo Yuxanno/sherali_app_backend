@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -140,4 +141,14 @@ connectDB().then(() => {
     console.log(`   Health: http://localhost:${PORT}/api/health`);
     console.log(`   Products: http://localhost:${PORT}/api/products`);
   });
+
+  // Self-ping каждые 25 секунд чтобы Render не усыплял сервис
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL || `https://sherali-app-backend.onrender.com`;
+  setInterval(() => {
+    https.get(`${SELF_URL}/api/health`, (res) => {
+      console.log(`🔔 Self-ping: ${res.statusCode}`);
+    }).on('error', (err) => {
+      console.warn(`⚠️ Self-ping failed: ${err.message}`);
+    });
+  }, 25 * 1000);
 });
